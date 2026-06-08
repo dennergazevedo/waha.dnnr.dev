@@ -1,0 +1,957 @@
+<!doctype html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Agente de IA para WhatsApp (N8N + WAHA)</title>
+        <style>
+            :root {
+                --amber: #f59e0b;
+                --amber-dark: #d97706;
+                --amber-deep: #b45309;
+                --amber-glow: rgba(245, 158, 11, 0.1);
+                --amber-glow2: rgba(245, 158, 11, 0.05);
+                --bg: #0b0b0b;
+                --surface: #141414;
+                --surface-2: #1c1c1c;
+                --surface-3: #222222;
+                --text: #ede8db;
+                --text-muted: #7a7065;
+                --border: #272320;
+                --border-2: #302c28;
+                --radius: 12px;
+                --radius-sm: 8px;
+                --shadow:
+                    0 2px 8px rgba(0, 0, 0, 0.6), 0 8px 32px rgba(0, 0, 0, 0.35);
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    Helvetica, Arial, sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            /* ── Header ── */
+            header {
+                width: 100%;
+                background: var(--surface);
+                border-bottom: 1px solid var(--border);
+                padding: 16px 24px;
+                display: flex;
+                align-items: center;
+                gap: 14px;
+            }
+
+            .logo {
+                width: 40px;
+                height: 40px;
+                background: #ff0000;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .logo svg {
+                width: 22px;
+                height: 22px;
+                fill: #fff;
+            }
+
+            header h1 {
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: var(--text);
+                line-height: 1.2;
+            }
+
+            header h1 span {
+                color: var(--amber);
+            }
+
+            /* ── Main layout ── */
+            main {
+                width: 100%;
+                max-width: 1300px;
+                padding: 28px 16px 56px;
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            @media (min-width: 820px) {
+                main {
+                    flex-direction: row;
+                    align-items: flex-start;
+                }
+                .config-col {
+                    flex: 0 0 400px;
+                }
+                .output-col {
+                    flex: 1;
+                    position: sticky;
+                    top: 20px;
+                }
+            }
+
+            .config-col {
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+            }
+            .output-col {
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* ── Card ── */
+            .card {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                overflow: hidden;
+            }
+
+            .card-header {
+                background: var(--surface-2);
+                border-bottom: 1px solid var(--border);
+                border-left: 3px solid var(--amber);
+                padding: 12px 18px;
+                color: var(--text);
+                font-weight: 600;
+                font-size: 0.88rem;
+                letter-spacing: 0.01em;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+            }
+
+            .card-header-title {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .card-header-dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: var(--amber);
+                flex-shrink: 0;
+            }
+
+            .card-body {
+                padding: 18px;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            /* ── OS Selector ── */
+            .os-selector {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .os-btn {
+                flex: 1;
+                min-width: 80px;
+                border: 1.5px solid var(--border-2);
+                border-radius: var(--radius-sm);
+                background: var(--surface-2);
+                cursor: pointer;
+                padding: 9px 12px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-muted);
+                transition:
+                    border-color 0.18s,
+                    color 0.18s,
+                    background 0.18s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+            }
+
+            .os-btn svg {
+                width: 16px;
+                height: 16px;
+                fill: currentColor;
+                flex-shrink: 0;
+            }
+            .os-btn:hover {
+                border-color: var(--amber);
+                color: var(--amber-dark);
+                background: var(--amber-glow2);
+            }
+
+            .os-btn.active {
+                border-color: var(--amber);
+                background: var(--amber-glow);
+                color: var(--amber);
+            }
+
+            /* ── Form fields ── */
+            .field {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            label {
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            input[type="text"],
+            input[type="password"] {
+                width: 100%;
+                border: 1.5px solid var(--border-2);
+                border-radius: var(--radius-sm);
+                padding: 9px 13px;
+                font-size: 0.9rem;
+                color: var(--text);
+                outline: none;
+                transition:
+                    border-color 0.18s,
+                    box-shadow 0.18s;
+                background: var(--surface-3);
+            }
+
+            input[type="text"]:focus,
+            input[type="password"]:focus {
+                border-color: var(--amber);
+                box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+            }
+
+            input[readonly] {
+                background: var(--surface-2);
+                color: var(--text-muted);
+                cursor: default;
+                font-family:
+                    "Fira Code", "Cascadia Code", "Consolas", monospace;
+                font-size: 0.82rem;
+            }
+
+            /* ── Buttons ── */
+            .btn {
+                border: none;
+                border-radius: var(--radius-sm);
+                cursor: pointer;
+                font-size: 0.82rem;
+                font-weight: 600;
+                padding: 7px 14px;
+                transition:
+                    background 0.18s,
+                    transform 0.1s;
+                white-space: nowrap;
+            }
+
+            .btn:active {
+                transform: scale(0.97);
+            }
+
+            .btn-ghost {
+                background: transparent;
+                border: 1.5px solid var(--border-2);
+                color: var(--text-muted);
+            }
+            .btn-ghost:hover {
+                border-color: var(--amber);
+                color: var(--amber);
+            }
+
+            .btn-primary {
+                background: var(--amber);
+                color: #111;
+                font-weight: 700;
+            }
+            .btn-primary:hover {
+                background: var(--amber-dark);
+            }
+
+            .btn-generate {
+                width: 100%;
+                padding: 13px;
+                font-size: 0.95rem;
+                border-radius: var(--radius);
+                background: var(--amber);
+                color: #111;
+                border: none;
+                cursor: pointer;
+                font-weight: 700;
+                letter-spacing: 0.02em;
+                transition:
+                    background 0.18s,
+                    box-shadow 0.18s,
+                    transform 0.1s;
+            }
+            .btn-generate:hover {
+                background: var(--amber-dark);
+                box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+            }
+            .btn-generate:active {
+                transform: scale(0.98);
+            }
+
+            /* ── Badge ── */
+            .badge {
+                display: inline-block;
+                background: var(--amber-glow);
+                color: var(--amber);
+                border: 1px solid rgba(245, 158, 11, 0.2);
+                border-radius: 20px;
+                padding: 2px 8px;
+                font-size: 0.68rem;
+                font-weight: 600;
+                text-transform: none;
+                letter-spacing: 0;
+            }
+
+            /* ── Notice ── */
+            .notice-alert {
+                background: rgba(245, 158, 11, 0.05);
+                border: 1px solid rgba(245, 158, 11, 0.2);
+                border-radius: var(--radius-sm);
+                padding: 14px 15px;
+                display: flex;
+                flex-direction: column;
+                gap: 9px;
+            }
+
+            .notice-alert-header {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                font-size: 0.82rem;
+                font-weight: 700;
+                color: var(--amber);
+            }
+
+            .notice-alert-header svg {
+                width: 16px;
+                height: 16px;
+                fill: var(--amber);
+                flex-shrink: 0;
+            }
+
+            .notice-alert p {
+                font-size: 0.8rem;
+                color: #9c8e76;
+                line-height: 1.55;
+            }
+
+            .notice-url-box {
+                background: var(--surface-3);
+                border: 1px solid var(--border-2);
+                border-radius: 6px;
+                padding: 8px 12px;
+                font-family:
+                    "Fira Code", "Cascadia Code", "Consolas", monospace;
+                font-size: 0.8rem;
+                color: var(--amber);
+                word-break: break-all;
+            }
+
+            .notice-alert small {
+                font-size: 0.75rem;
+                color: #6b6055;
+                line-height: 1.45;
+            }
+
+            .notice-alert small code {
+                background: var(--surface-3);
+                padding: 1px 4px;
+                border-radius: 3px;
+                font-size: 0.73rem;
+                color: #9c8e76;
+            }
+
+            .notice-inner {
+                background: rgba(245, 158, 11, 0.05);
+                border-left: 3px solid rgba(245, 158, 11, 0.4);
+                border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+                padding: 10px 13px;
+                font-size: 0.8rem;
+                color: #9c8e76;
+                line-height: 1.5;
+            }
+
+            .notice-inner code {
+                background: var(--surface-3);
+                padding: 1px 4px;
+                border-radius: 3px;
+                font-size: 0.76rem;
+            }
+
+            /* ── Output card ── */
+            .output-card {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                min-height: 340px;
+            }
+
+            .output-placeholder {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 14px;
+                padding: 56px 24px;
+                color: var(--text-muted);
+                text-align: center;
+            }
+
+            .output-placeholder svg {
+                width: 40px;
+                height: 40px;
+                fill: currentColor;
+                opacity: 0.2;
+            }
+
+            .output-placeholder p {
+                font-size: 0.85rem;
+                line-height: 1.6;
+                color: #524840;
+            }
+            .output-placeholder strong {
+                color: var(--amber);
+            }
+
+            .output-header-actions {
+                display: flex;
+                gap: 7px;
+            }
+
+            .code-wrap {
+                flex: 1;
+                background: #13131f;
+                overflow-x: auto;
+            }
+
+            pre {
+                font-family:
+                    "Fira Code", "Cascadia Code", "Consolas", monospace;
+                font-size: 0.8rem;
+                line-height: 1.7;
+                color: #cdd6f4;
+                padding: 20px 22px;
+                white-space: pre;
+            }
+
+            /* YAML syntax */
+            .y-key {
+                color: #89dceb;
+            }
+            .y-val {
+                color: #a6e3a1;
+            }
+            .y-str {
+                color: #f9e2af;
+            }
+            .y-comment {
+                color: #45475a;
+                font-style: italic;
+            }
+            .y-dash {
+                color: #cba6f7;
+            }
+            .y-colon {
+                color: #6c7086;
+            }
+
+            /* ── Toast ── */
+            #toast {
+                position: fixed;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%) translateY(80px);
+                background: var(--surface-2);
+                border: 1px solid var(--amber);
+                color: var(--amber);
+                padding: 10px 22px;
+                border-radius: 24px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                box-shadow:
+                    0 4px 24px rgba(0, 0, 0, 0.6),
+                    0 0 16px rgba(245, 158, 11, 0.2);
+                transition: transform 0.3s ease;
+                z-index: 999;
+                pointer-events: none;
+            }
+            #toast.show {
+                transform: translateX(-50%) translateY(0);
+            }
+
+            @media (max-width: 480px) {
+                pre {
+                    font-size: 0.72rem;
+                    padding: 14px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="logo">
+                <!-- YouTube icon -->
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.81 3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.81zM9.75 15.5V8.5l6.25 3.5-6.25 3.5z"
+                    />
+                </svg>
+            </div>
+            <h1>Agente de IA para <span>WhatsApp</span> — N8N + WAHA</h1>
+        </header>
+
+        <main>
+            <!-- ── Config column ── -->
+            <div class="config-col">
+                <!-- WAHA config -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-title">
+                            <span class="card-header-dot"></span>
+                            Configuração do WAHA
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="field">
+                            <label>Username</label>
+                            <input
+                                type="text"
+                                id="waha-user"
+                                placeholder="admin"
+                            />
+                        </div>
+
+                        <div class="field">
+                            <label>Password</label>
+                            <input
+                                type="text"
+                                id="waha-pass"
+                                placeholder="Sua senha de acesso…"
+                            />
+                        </div>
+
+                        <div class="field">
+                            <label
+                                >API Key
+                                <span class="badge"
+                                    >gerada automaticamente</span
+                                ></label
+                            >
+                            <input type="text" id="waha-api-key" readonly />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Webhook notice -->
+                <div class="notice-alert">
+                    <div class="notice-alert-header">
+                        <svg
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"
+                            />
+                        </svg>
+                        URL Global de Webhook
+                    </div>
+                    <p>
+                        O WAHA envia todos os eventos do WhatsApp para o n8n
+                        automaticamente. A URL é ajustada conforme o Sistema
+                        Operacional.
+                    </p>
+                    <div class="notice-url-box" id="notice-url">
+                        http://host.docker.internal:5678/webhook/waha
+                    </div>
+                </div>
+
+                <!-- OS -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-title">
+                            <span class="card-header-dot"></span>
+                            Sistema Operacional
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="os-selector">
+                            <button
+                                class="os-btn active"
+                                data-os="mac"
+                                onclick="selectOS('mac')"
+                            >
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"
+                                    />
+                                </svg>
+                                macOS
+                            </button>
+
+                            <button
+                                class="os-btn"
+                                data-os="windows"
+                                onclick="selectOS('windows')"
+                            >
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M3 12V6.75l6-1.32v6.57H3zm17 0V3L11 4.5v7.5h9zM3 13h6v6.57l-6-1.32V13zm17 0h-9v7.5l9 1.5V13z"
+                                    />
+                                </svg>
+                                Windows
+                            </button>
+
+                            <button
+                                class="os-btn"
+                                data-os="linux"
+                                onclick="selectOS('linux')"
+                            >
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 15l1.41-1.41L5 12l2.41-2.41L6 8.18 2.59 12 6 15zm6-1h4v-2h-4v2z"
+                                    />
+                                </svg>
+                                Linux
+                            </button>
+                        </div>
+
+                        <div
+                            id="linux-notice"
+                            class="notice-inner"
+                            style="display: none"
+                        >
+                            No Linux, <code>host.docker.internal</code> não
+                            funciona nativamente. O wizard usará
+                            <strong>172.17.0.1</strong> — gateway padrão do
+                            Docker bridge.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generate -->
+                <button class="btn-generate" onclick="generate()">
+                    Gerar docker-compose.yml
+                </button>
+            </div>
+            <!-- /config-col -->
+
+            <!-- ── Output column ── -->
+            <div class="output-col">
+                <div class="output-card" id="output-card">
+                    <div class="card-header">
+                        <div class="card-header-title">
+                            <span class="card-header-dot"></span>
+                            docker-compose.yml
+                        </div>
+                        <div
+                            class="output-header-actions"
+                            id="output-header-actions"
+                            style="display: none"
+                        >
+                            <button
+                                class="btn btn-ghost"
+                                onclick="copyOutput()"
+                            >
+                                Copiar
+                            </button>
+                            <button
+                                class="btn btn-primary"
+                                onclick="downloadOutput()"
+                            >
+                                Baixar .yml
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="output-placeholder" id="output-placeholder">
+                        <svg
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zm-5-5.07 1.59 1.59L16 15.09 12.01 11 8 15.09l1.41 1.43L11 14.84V19h2v-4.07z"
+                            />
+                        </svg>
+                        <p>
+                            Configure as opções ao lado e clique em<br /><strong
+                                >Gerar docker-compose.yml</strong
+                            >
+                        </p>
+                    </div>
+
+                    <div class="code-wrap" id="code-wrap" style="display: none">
+                        <pre id="output-pre"></pre>
+                    </div>
+                </div>
+            </div>
+            <!-- /output-col -->
+        </main>
+
+        <div id="toast">Copiado!</div>
+
+        <script>
+            let currentOS = "mac";
+            let n8nEncKey = "";
+
+            /* ── Init ── */
+            window.addEventListener("DOMContentLoaded", () => {
+                document.getElementById("waha-api-key").value = generateUUID();
+                n8nEncKey = randomHex(32);
+                updateNoticeURL();
+            });
+
+            /* ── OS selection ── */
+            function selectOS(os) {
+                currentOS = os;
+                document
+                    .querySelectorAll(".os-btn")
+                    .forEach((b) => b.classList.remove("active"));
+                document
+                    .querySelector(`[data-os="${os}"]`)
+                    .classList.add("active");
+                document.getElementById("linux-notice").style.display =
+                    os === "linux" ? "block" : "none";
+                updateNoticeURL();
+            }
+
+            function updateNoticeURL() {
+                const host =
+                    currentOS === "linux"
+                        ? "172.17.0.1"
+                        : "host.docker.internal";
+                document.getElementById("notice-url").textContent =
+                    `http://${host}:5678/webhook/waha`;
+                const el = document.getElementById("notice-detail");
+                if (currentOS === "linux") {
+                    el.innerHTML =
+                        "No Linux, <code>host.docker.internal</code> não funciona nativamente. Usando <strong>172.17.0.1</strong> — gateway padrão do Docker bridge.";
+                } else {
+                    el.innerHTML =
+                        "No macOS e Windows, o Docker resolve <code>host.docker.internal</code> automaticamente. Selecione <strong>Linux</strong> para usar <strong>172.17.0.1</strong>.";
+                }
+            }
+
+            /* ── Generators ── */
+            function randomAlpha(len) {
+                const chars =
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                const arr = new Uint32Array(len);
+                crypto.getRandomValues(arr);
+                return Array.from(arr, (v) => chars[v % chars.length]).join("");
+            }
+
+            function randomHex(len) {
+                const arr = new Uint8Array(Math.ceil(len / 2));
+                crypto.getRandomValues(arr);
+                return Array.from(arr, (b) => b.toString(16).padStart(2, "0"))
+                    .join("")
+                    .slice(0, len);
+            }
+
+            function generateUUID() {
+                const arr = new Uint8Array(16);
+                crypto.getRandomValues(arr);
+                arr[6] = (arr[6] & 0x0f) | 0x40;
+                arr[8] = (arr[8] & 0x3f) | 0x80;
+                const h = Array.from(arr, (b) =>
+                    b.toString(16).padStart(2, "0"),
+                );
+                return `${h.slice(0, 4).join("")}-${h.slice(4, 6).join("")}-${h.slice(6, 8).join("")}-${h.slice(8, 10).join("")}-${h.slice(10, 16).join("")}`;
+            }
+
+            /* ── Generate YAML ── */
+            function generate() {
+                const wahaUser =
+                    document.getElementById("waha-user").value.trim() ||
+                    "admin";
+                const wahaPass =
+                    document.getElementById("waha-pass").value.trim() ||
+                    randomAlpha(12);
+                const wahaApiKey =
+                    document.getElementById("waha-api-key").value.trim() ||
+                    generateUUID();
+                const dockerHost =
+                    currentOS === "linux"
+                        ? "172.17.0.1"
+                        : "host.docker.internal";
+                const hookURL = `http://${dockerHost}:5678/webhook/waha`;
+
+                document.getElementById("output-pre").innerHTML = highlightYAML(
+                    buildYAML({
+                        wahaUser,
+                        wahaPass,
+                        wahaApiKey,
+                        n8nEncKey,
+                        hookURL,
+                    }),
+                );
+
+                document.getElementById("output-placeholder").style.display =
+                    "none";
+                document.getElementById("code-wrap").style.display = "block";
+                document.getElementById("output-header-actions").style.display =
+                    "flex";
+            }
+
+            /* ── YAML builder ── */
+            function buildYAML({
+                wahaUser,
+                wahaPass,
+                wahaApiKey,
+                n8nEncKey,
+                hookURL,
+            }) {
+                return `services:
+  waha:
+    image: devlikeapro/waha
+    container_name: waha
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Link do Dashboard (http://localhost:3000/dashboard)
+      - WAHA_DASHBOARD_USERNAME=${wahaUser}
+      - WAHA_DASHBOARD_PASSWORD=${wahaPass}
+      - WHATSAPP_SWAGGER_USERNAME=${wahaUser}
+      - WHATSAPP_SWAGGER_PASSWORD=${wahaPass}
+      # API Key (header X-Api-Key)
+      - WAHA_API_KEY=${wahaApiKey}
+      - TZ=America/Sao_Paulo
+      - WHATSAPP_HOOK_URL=${hookURL}
+      - WHATSAPP_HOOK_EVENTS=message.any
+    volumes:
+      # Não apagar, importante para funcionamento após reiniciar
+      - ./waha/sessions:/app/.sessions
+      - ./waha/media:/app/.media
+    networks:
+      - automation
+
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+      - TZ=America/Sao_Paulo
+      - N8N_ENCRYPTION_KEY=${n8nEncKey}
+      - N8N_RUNNERS_ENABLED=true
+    volumes:
+      - ./n8n/data:/home/node/.n8n
+      - ./n8n/files:/files
+    networks:
+      - automation
+
+networks:
+  automation:
+    driver: bridge
+`;
+            }
+
+            /* ── Syntax highlighter ── */
+            function highlightYAML(raw) {
+                return raw
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .split("\n")
+                    .map((line) => {
+                        if (/^\s*#/.test(line))
+                            return `<span class="y-comment">${line}</span>`;
+                        if (/^\s+- \w/.test(line))
+                            return (
+                                line.replace(
+                                    /^(\s+)(- )([^=\n]+)(=)(.*)$/,
+                                    (_, sp, dash, key, eq, val) =>
+                                        `${sp}<span class="y-dash">${dash}</span><span class="y-key">${key}</span><span class="y-colon">${eq}</span><span class="y-str">${val}</span>`,
+                                ) || `<span class="y-dash">${line}</span>`
+                            );
+                        if (/^\s*[\w-]+:/.test(line))
+                            return line.replace(
+                                /^(\s*)([\w-]+)(:)(\s*)(.*)$/,
+                                (_, sp, key, colon, space, val) =>
+                                    `${sp}<span class="y-key">${key}</span><span class="y-colon">${colon}</span>${space}${val ? `<span class="y-val">${val}</span>` : ""}`,
+                            );
+                        return line;
+                    })
+                    .join("\n");
+            }
+
+            /* ── Copy / Download ── */
+            function getRawYAML() {
+                return document.getElementById("output-pre").innerText;
+            }
+
+            function copyOutput() {
+                navigator.clipboard
+                    .writeText(getRawYAML())
+                    .then(() => showToast("Copiado!"));
+            }
+
+            function downloadOutput() {
+                const blob = new Blob([getRawYAML()], { type: "text/yaml" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = "docker-compose.yml";
+                a.click();
+                URL.revokeObjectURL(a.href);
+            }
+
+            /* ── Toast ── */
+            function showToast(msg) {
+                const t = document.getElementById("toast");
+                t.textContent = msg;
+                t.classList.add("show");
+                setTimeout(() => t.classList.remove("show"), 2400);
+            }
+        </script>
+    </body>
+</html>
