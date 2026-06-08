@@ -208,6 +208,70 @@
                 color: var(--amber);
             }
 
+            /* ── Arch Selector (Mac only) ── */
+            .arch-selector-wrap {
+                display: flex;
+                flex-direction: column;
+                gap: 7px;
+            }
+
+            .arch-selector-label {
+                font-size: 0.72rem;
+                font-weight: 600;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+            }
+
+            .arch-selector {
+                display: flex;
+                gap: 8px;
+            }
+
+            .arch-btn {
+                flex: 1;
+                border: 1.5px solid var(--border-2);
+                border-radius: var(--radius-sm);
+                background: var(--surface-2);
+                cursor: pointer;
+                padding: 8px 12px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: var(--text-muted);
+                transition:
+                    border-color 0.18s,
+                    color 0.18s,
+                    background 0.18s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+            }
+
+            .arch-btn:hover {
+                border-color: var(--amber);
+                color: var(--amber-dark);
+                background: var(--amber-glow2);
+            }
+
+            .arch-btn.active {
+                border-color: var(--amber);
+                background: var(--amber-glow);
+                color: var(--amber);
+            }
+
+            .arch-chip {
+                display: inline-block;
+                background: rgba(245, 158, 11, 0.08);
+                border: 1px solid rgba(245, 158, 11, 0.15);
+                border-radius: 4px;
+                padding: 1px 5px;
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                color: var(--amber);
+            }
+
             /* ── Form fields ── */
             .field {
                 display: flex;
@@ -576,6 +640,28 @@
                     </div>
                 </div>
 
+                <!-- n8n config -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-title">
+                            <span class="card-header-dot"></span>
+                            Configuração do n8n
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="field">
+                            <label>
+                                Encryption Key
+                                <span class="badge">gerada automaticamente</span>
+                            </label>
+                            <input type="text" id="n8n-enc-key" readonly />
+                        </div>
+                        <div class="notice-inner">
+                            Guarde esta chave. Se regenerar o yml com uma chave diferente e já existir um volume <code>./n8n/data</code>, o n8n não vai iniciar.
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Webhook notice -->
                 <div class="notice-alert">
                     <div class="notice-alert-header">
@@ -610,7 +696,7 @@
                     <div class="card-body">
                         <div class="os-selector">
                             <button
-                                class="os-btn active"
+                                class="os-btn"
                                 data-os="mac"
                                 onclick="selectOS('mac')"
                             >
@@ -658,15 +744,41 @@
                             </button>
                         </div>
 
+                        <!-- Mac arch selector -->
+                        <div
+                            id="mac-arch-wrap"
+                            class="arch-selector-wrap"
+                            style="display: none"
+                        >
+                            <div class="arch-selector-label">Arquitetura do Mac</div>
+                            <div class="arch-selector">
+                                <button
+                                    class="arch-btn"
+                                    data-arch="arm"
+                                    onclick="selectArch('arm')"
+                                >
+                                    <span class="arch-chip">ARM</span>
+                                    Apple Silicon
+                                </button>
+                                <button
+                                    class="arch-btn"
+                                    data-arch="amd"
+                                    onclick="selectArch('amd')"
+                                >
+                                    <span class="arch-chip">x86</span>
+                                    Intel
+                                </button>
+                            </div>
+                        </div>
+
                         <div
                             id="linux-notice"
                             class="notice-inner"
                             style="display: none"
                         >
-                            No Linux, <code>host.docker.internal</code> não
-                            funciona nativamente. O wizard usará
-                            <strong>172.17.0.1</strong> — gateway padrão do
-                            Docker bridge.
+                            No Linux, <code>host.docker.internal</code> não existe por padrão.
+                            O yml gerado adiciona <code>extra_hosts: host-gateway</code> no WAHA
+                            para que o Docker resolva o IP do host automaticamente.
                         </div>
                     </div>
                 </div>
@@ -733,19 +845,20 @@
         <div id="toast">Copiado!</div>
 
         <script>
-            let currentOS = "mac";
-            let n8nEncKey = "";
+            let currentOS = null;
+            let macArch = null;
 
             /* ── Init ── */
             window.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("waha-api-key").value = generateUUID();
-                n8nEncKey = randomHex(32);
+                document.getElementById("n8n-enc-key").value = randomHex(32);
                 updateNoticeURL();
             });
 
             /* ── OS selection ── */
             function selectOS(os) {
                 currentOS = os;
+                macArch = null;
                 document
                     .querySelectorAll(".os-btn")
                     .forEach((b) => b.classList.remove("active"));
@@ -754,24 +867,32 @@
                     .classList.add("active");
                 document.getElementById("linux-notice").style.display =
                     os === "linux" ? "block" : "none";
+                const archWrap = document.getElementById("mac-arch-wrap");
+                if (os === "mac") {
+                    archWrap.style.display = "flex";
+                    document
+                        .querySelectorAll(".arch-btn")
+                        .forEach((b) => b.classList.remove("active"));
+                } else {
+                    archWrap.style.display = "none";
+                }
                 updateNoticeURL();
             }
 
+            /* ── Arch selection (Mac only) ── */
+            function selectArch(arch) {
+                macArch = arch;
+                document
+                    .querySelectorAll(".arch-btn")
+                    .forEach((b) => b.classList.remove("active"));
+                document
+                    .querySelector(`[data-arch="${arch}"]`)
+                    .classList.add("active");
+            }
+
             function updateNoticeURL() {
-                const host =
-                    currentOS === "linux"
-                        ? "172.17.0.1"
-                        : "host.docker.internal";
                 document.getElementById("notice-url").textContent =
-                    `http://${host}:5678/webhook/waha`;
-                const el = document.getElementById("notice-detail");
-                if (currentOS === "linux") {
-                    el.innerHTML =
-                        "No Linux, <code>host.docker.internal</code> não funciona nativamente. Usando <strong>172.17.0.1</strong> — gateway padrão do Docker bridge.";
-                } else {
-                    el.innerHTML =
-                        "No macOS e Windows, o Docker resolve <code>host.docker.internal</code> automaticamente. Selecione <strong>Linux</strong> para usar <strong>172.17.0.1</strong>.";
-                }
+                    "http://host.docker.internal:5678/webhook/waha";
             }
 
             /* ── Generators ── */
@@ -804,6 +925,15 @@
 
             /* ── Generate YAML ── */
             function generate() {
+                if (!currentOS) {
+                    showToast("Selecione o Sistema Operacional");
+                    return;
+                }
+                if (currentOS === "mac" && !macArch) {
+                    showToast("Selecione a arquitetura do Mac");
+                    return;
+                }
+
                 const wahaUser =
                     document.getElementById("waha-user").value.trim() ||
                     "admin";
@@ -813,11 +943,10 @@
                 const wahaApiKey =
                     document.getElementById("waha-api-key").value.trim() ||
                     generateUUID();
-                const dockerHost =
-                    currentOS === "linux"
-                        ? "172.17.0.1"
-                        : "host.docker.internal";
-                const hookURL = `http://${dockerHost}:5678/webhook/waha`;
+                const n8nEncKey =
+                    document.getElementById("n8n-enc-key").value.trim() ||
+                    randomHex(32);
+                const hookURL = `http://host.docker.internal:5678/webhook/waha`;
 
                 document.getElementById("output-pre").innerHTML = highlightYAML(
                     buildYAML({
@@ -826,6 +955,8 @@
                         wahaApiKey,
                         n8nEncKey,
                         hookURL,
+                        macArm: currentOS === "mac" && macArch === "arm",
+                        isLinux: currentOS === "linux",
                     }),
                 );
 
@@ -843,14 +974,23 @@
                 wahaApiKey,
                 n8nEncKey,
                 hookURL,
+                macArm,
+                isLinux,
             }) {
+                const wahaPlatform = macArm ? "\n    platform: linux/amd64" : "";
+                const wahaEngine = macArm
+                    ? "\n      # Engine NOWEB: sem Chromium, mais leve sob emulação Rosetta\n      - WHATSAPP_DEFAULT_ENGINE=NOWEB"
+                    : "";
+                const wahaExtraHosts = isLinux
+                    ? "\n    extra_hosts:\n      # Permite alcançar o host (n8n) a partir do container no Linux\n      - \"host.docker.internal:host-gateway\""
+                    : "";
                 return `services:
   waha:
-    image: devlikeapro/waha
+    image: devlikeapro/waha${wahaPlatform}
     container_name: waha
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3000:3000"${wahaExtraHosts}
     environment:
       # Link do Dashboard (http://localhost:3000/dashboard)
       - WAHA_DASHBOARD_USERNAME=${wahaUser}
@@ -861,7 +1001,7 @@
       - WAHA_API_KEY=${wahaApiKey}
       - TZ=America/Sao_Paulo
       - WHATSAPP_HOOK_URL=${hookURL}
-      - WHATSAPP_HOOK_EVENTS=message.any
+      - WHATSAPP_HOOK_EVENTS=message.any${wahaEngine}
     volumes:
       # Não apagar, importante para funcionamento após reiniciar
       - ./waha/sessions:/app/.sessions
