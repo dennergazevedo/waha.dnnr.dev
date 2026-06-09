@@ -979,7 +979,7 @@
             }) {
                 const wahaPlatform = macArm ? "\n    platform: linux/amd64" : "";
                 const wahaEngine = macArm
-                    ? "\n      # Engine NOWEB: sem Chromium, mais leve sob emulação Rosetta\n      - WHATSAPP_DEFAULT_ENGINE=NOWEB"
+                    ? "\n      # Engine NOWEB: sem Chromium, mais leve sob emulação Rosetta\n      - WHATSAPP_DEFAULT_ENGINE=NOWEB\n      # Store obrigatório para NOWEB (LIDs, histórico)\n      - WAHA_NOWEB_STORE_ENABLED=True\n      - WAHA_NOWEB_STORE_FULL_SYNC=True"
                     : "";
                 const wahaExtraHosts = isLinux
                     ? "\n    extra_hosts:\n      # Permite alcançar o host (n8n) a partir do container no Linux\n      - \"host.docker.internal:host-gateway\""
