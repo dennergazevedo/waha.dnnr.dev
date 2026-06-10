@@ -1,0 +1,514 @@
+{
+  "name": "Agente de IA para WhatsApp - N8N + WAHA",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "waha",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "320a8f33-ebab-4557-9a90-336996d6ef4e",
+      "name": "Webhook",
+      "webhookId": "c2fd2c75-92e9-485c-8ab4-22c2b90339e6"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fbc8357b-0f62-434a-9b5d-772f7928ad7a",
+              "name": "session",
+              "value": "={{ $json.body.session }}",
+              "type": "string"
+            },
+            {
+              "id": "6e7fe8c5-0a34-43ab-92f7-c75ea878e4d9",
+              "name": "from",
+              "value": "={{ $json.body.payload._data.key.remoteJidAlt }}",
+              "type": "string"
+            },
+            {
+              "id": "a6c99256-132d-4077-8f6f-156405928b03",
+              "name": "fromMe",
+              "value": "={{ $json.body.payload.fromMe }}",
+              "type": "boolean"
+            },
+            {
+              "id": "03ed55db-e59e-40eb-ab5d-bdc55c374114",
+              "name": "source",
+              "value": "={{ $json.body.payload.source }}",
+              "type": "string"
+            },
+            {
+              "id": "29cd5052-ef10-4c78-aa8b-81dea6a45ba1",
+              "name": "body",
+              "value": "={{ $json.body.payload.body }}",
+              "type": "string"
+            },
+            {
+              "id": "e0cb05f5-c1f9-469a-871d-1bad2be4d63f",
+              "name": "messageId",
+              "value": "={{ $json.body.payload._data.key.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f963e25d-3366-4d37-8fde-f024a175edad",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8919955a-ea3c-4cc3-8a63-d08e722a8387",
+              "leftValue": "={{ $json.from }}",
+              "rightValue": "@c.us",
+              "operator": {
+                "type": "string",
+                "operation": "notEndsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "eaaecb8c-f6cf-43ec-97d6-b52781616edc",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const from = $('Edit Fields').first().json.from;\n\nreturn [\n  {\n    json: {\n      session: $input.first().json.session,\n      from: `${from.split('@')[0]}@c.us`,\n      fromMe: $input.first().json.fromMe,\n      source: $input.first().json.source,\n      body: $input.first().json.body,\n      messageId: $input.first().json.messageId\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "18f944dd-83fe-4f29-a9ae-3f4ea3dfe1cf",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        848,
+        0
+      ],
+      "id": "12cc9fd7-11d5-48d2-b7aa-5ec1e31ee3fe",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "313301dd-8909-4373-88e6-8b64c764c445",
+              "leftValue": "={{ $json.source }}",
+              "rightValue": "api",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "f546652e-0a25-4e09-988e-140c2c3b44e5",
+              "leftValue": "={{ $json.from }}",
+              "rightValue": "@g.us",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "02e7198d-5d15-4473-8d42-08c8d280bd86",
+              "leftValue": "={{ $json.fromMe }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "c4950db8-7274-42fe-ad91-c8390285a6c4",
+      "name": "API Block"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body }}",
+        "options": {
+          "systemMessage": "Seja útil e gentil"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1264,
+        96
+      ],
+      "id": "9ce18cf6-ea9a-40bd-bc88-573923563539",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.from }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        1360,
+        336
+      ],
+      "id": "735840ea-877e-4ef5-9901-e8043d4bd8ab",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1248,
+        336
+      ],
+      "id": "70991483-e03e-4254-a9a7-976a6bef148a",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "IQuKw21GY5ofMqod",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Merge').item.json.session }}",
+        "chatId": "={{ $('Merge').item.json.from }}",
+        "text": "={{ $('AI Agent').item.json.output }}",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1824,
+        96
+      ],
+      "id": "c0039405-4b27-4581-acef-6d4077080b4d",
+      "name": "Send a text message",
+      "credentials": {
+        "wahaApi": {
+          "id": "KIRkS4jT0fptPhNN",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Seen",
+        "session": "={{ $('Merge').item.json.session }}",
+        "chatId": "={{ $('Merge').item.json.from }}",
+        "messageId": "={{ $('API Block').item.json.fromMe }}_{{ $('API Block').item.json.from }}_{{ $('API Block').item.json.messageId }}",
+        "participant": "",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1616,
+        96
+      ],
+      "id": "c8ed7bef-0218-4d99-b624-e264c29f47de",
+      "name": "Send Seen",
+      "credentials": {
+        "wahaApi": {
+          "id": "KIRkS4jT0fptPhNN",
+          "name": "WAHA account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "accept": "application/json, text/plain, */*",
+            "content-type": "application/json",
+            "user-agent": "WAHA/2026.5.1",
+            "x-webhook-request-id": "gd7mq5mm2yv",
+            "x-webhook-timestamp": "1780948263558",
+            "content-length": "1169",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "host": "host.docker.internal:5678",
+            "connection": "keep-alive"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "id": "evt_01ktmckrm6f8d04c0zj36z90ya",
+            "timestamp": 1780948263558,
+            "event": "message.any",
+            "session": "default",
+            "me": {
+              "id": "553195925025@c.us",
+              "pushName": "Undefined",
+              "lid": "130722295759097@lid"
+            },
+            "payload": {
+              "id": "false_18408296988870@lid_3AE68C69027070F635A7",
+              "timestamp": 1780948263,
+              "from": "18408296988870@lid",
+              "fromMe": false,
+              "source": "app",
+              "body": "Oi",
+              "hasMedia": false,
+              "media": null,
+              "ack": 2,
+              "ackName": "DEVICE",
+              "location": null,
+              "vCards": null,
+              "replyTo": null,
+              "_data": {
+                "key": {
+                  "remoteJid": "18408296988870@lid",
+                  "remoteJidAlt": "553171402515@s.whatsapp.net",
+                  "fromMe": false,
+                  "id": "3AE68C69027070F635A7",
+                  "participant": "",
+                  "addressingMode": "lid"
+                },
+                "messageTimestamp": 1780948263,
+                "pushName": "Denner Azevedo",
+                "broadcast": false,
+                "message": {
+                  "conversation": "Oi",
+                  "messageContextInfo": {
+                    "deviceListMetadata": {
+                      "senderKeyHash": "MOGMkWwbjmjveg==",
+                      "senderTimestamp": "1780947320",
+                      "recipientKeyHash": "1tdIh6suWpbWcw==",
+                      "recipientTimestamp": "1762097491"
+                    },
+                    "deviceListMetadataVersion": 2,
+                    "messageSecret": "hGOQ5DxqjOIics7C9jA0O8Ltjay0OiK7XYVVmud6FDE="
+                  }
+                },
+                "status": 3
+              }
+            },
+            "engine": "NOWEB",
+            "environment": {
+              "version": "2026.5.1",
+              "engine": "NOWEB",
+              "tier": "CORE",
+              "browser": null,
+              "platform": "linux/x64",
+              "worker": {
+                "id": null
+              }
+            }
+          },
+          "webhookUrl": "http://localhost:5678/webhook/waha",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "API Block",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API Block": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Seen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Seen": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "02c5e3d2-50b8-4c4e-8f32-aa426912aab4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bae9f479eb800b9fdc71e4e0166a518de6ed1da181f2c5fbb90c813376397fe9"
+  },
+  "nodeGroups": [],
+  "id": "KMO2o2RcMBWptrPz",
+  "tags": []
+}
